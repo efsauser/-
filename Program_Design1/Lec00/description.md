@@ -1,3 +1,4 @@
+# Say Hello to C
 Welcome to program design (I). Let's say hello to our best friend C.
 
 ### Input
