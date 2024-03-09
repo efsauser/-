@@ -9,12 +9,12 @@
 雖然各種程式語言均有很強的regular expression功能，例如在java中，透過`java.util.regex` package可以實作複雜的regular expression應用，但在本次作業，我們將要求：
 
 <aside>
-📖 不能使用`java.util.regex`，實現以下的功能：
-
-1. 確認是否是迴文，是的話回答Y，不是的話回答N
-2. 確認是否包含特定字串$str_1$，是的話回答Y，不是的話回答N
-3. 確認是否包含特定字串$str_2$超過或等於n次，是的話回答Y，不是的話回答N
-4. 確認是否包含字串$a^{m}Xb^{2m}$, where $m\geq1$, and $X$ is any string (empty is ok).
-其中$a^m$指的是a或A連續重覆m次，而$b^{2m}$指的是b或B連續重覆2m次。
-如果符合包含字串$a^{m}Xb^{2m}$的話，回答Y, 不包含的話回答N
+  📖 不能使用`java.util.regex`，實現以下的功能：
+  
+  1. 確認是否是迴文，是的話回答Y，不是的話回答N
+  2. 確認是否包含特定字串 $str_1$，是的話回答Y，不是的話回答N
+  3. 確認是否包含特定字串 $str_2$ 超過或等於n次，是的話回答Y，不是的話回答N
+  4. 確認是否包含字串 $a^{m}Xb^{2m}$ , where $m\geq1$, and $X$ is any string (empty is ok).
+     其中 $a^m$ 指的是a或A連續重覆m次，而 $b^{2m}$ 指的是b或B連續重覆 $2m$次。
+  如果符合包含字串 $a^{m}Xb^{2m}$ 的話，回答Y, 不包含的話回答N
 </aside>
