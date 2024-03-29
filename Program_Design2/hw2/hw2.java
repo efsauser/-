@@ -6,14 +6,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.String;
 import java.util.regex.*;
-// import java.util.ArrayList;
 
 public class CodeGenerator {
     public static void main(String[] args) {
         //初始化
-        myParser Parser = new myParser();
+        myParser lineParser = new myParser();
         myFileWriter CodeWriter = new myFileWriter();
         String mermaidLine = "";
+        String lineCategory = "";
 
         try {
             BufferedReader reader = new BufferedReader(new FileReader(args[0]));
@@ -21,165 +21,136 @@ public class CodeGenerator {
             mermaidLine = reader.readLine();
             // 一行一行讀取文件(借用RegExp的內容)
             while ((mermaidLine = reader.readLine()) != null) {
-                Parser.lineTest(mermaidLine);
-                System.err.println("{"+mermaidLine+"}"+
-                                " className:" +Parser.className+
-                                "| is class:" +Parser.isClass+
-                                "| is public:"+Parser.isPublic+
-                                "| is Method:"+Parser.isMethod);
-                // 寫入文件
-                CodeWriter.write(Parser.className, Parser.isClass, 
-                                 Parser.isPublic, Parser.isMethod, 
-                                 Parser.idType, Parser.idName,
-                                 Parser.get, Parser.set);
+                // Parser.lineTest(mermaidLine);
+                lineCategory = lineParser.classifier(mermaidLine);
+                if(lineCategory.equals("class")){
+                    if(!CodeWriter.fileName.equals("(>_<)")){
+                        CodeWriter.writeRightBrace(lineParser.className);
+                    }
+                    lineParser.classParser(mermaidLine);
+                    CodeWriter.classWrite(lineParser.className);
+                }else{
+                    if(lineCategory.equals("attribute")){
+                        String security = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
+                        lineParser.attributeParser(mermaidLine);
+                        CodeWriter.attributeWrite( lineParser.className, lineParser.type, 
+                                                   lineParser.name, security);
+                    }else if(lineCategory.equals("getter")){
+                        String security = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
+                        lineParser.getterParser(mermaidLine);
+                        CodeWriter.getterWrite( lineParser.className, lineParser.type, 
+                                                lineParser.name, security);
+                    }
+                    else if(lineCategory.equals("setter")){
+                        lineParser.setterParser(mermaidLine);
+                        CodeWriter.setterWrite( lineParser.className, lineParser.type, 
+                                                lineParser.name, lineParser.parameter);
+                    }
+                    else if(lineCategory.equals("method")){
+                        String security = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
+                        lineParser.methodParser(mermaidLine);
+                        CodeWriter.methodWrite( lineParser.className, lineParser.type, 
+                                                lineParser.name, lineParser.parameter, security);
+                    }else if(lineCategory.equals("empty")){
+                        continue;
+                    }
+                }
+                // for debug
+                // System.err.println("{"+mermaidLine+"}"+
+                //                 " className:" +lineParser.className+
+                //                 "| category:" +lineCategory+
+                //                 "| type:"+lineParser.type+
+                //                 "| name:"+lineParser.name);
             }  
-            // CodeWriter.writeRightBrace(Parser.className);
+            CodeWriter.writeRightBrace(lineParser.className);
             reader.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
-
     }
 }
 
 class myParser{
     public String className;
     public boolean isClass;
-    public boolean isPublic;
-    public boolean isPrivate;
-    public boolean isMethod; // 我知道getter跟setter也是一種Method，但這個變數不包含這兩種
-    public boolean isGetter;
-    public boolean isSetter;
-    public String idType; // identifierName
-    public String idName; // identifierType
-    public String get;
-    public String set;
+    public String type; // identifierName
+    public String name; // identifierType
+    public String parameter; // parameter of setter or simple method(不包含setter或getter) 
 
-    public void classifier(String inputLine){
-        String[] words = inputLine.split(" ");
-        for(String word:words){
-            this.isClass = Pattern.matches("class*", word)? true:false;
-            this.isPublic = Pattern.matches("\\+.*", word)? true:false;
-            this.isPrivate = Pattern.matches("\\-.*", word)? true:false;
-            this.isMethod = Pattern.matches(".*\\(.*", word)? true:false;
-            this.isGetter = Pattern.matches(".*get.*", word)? true:false;
-            this.isSetter = Pattern.matches(".*set.*", word)? true:false;
+    public String classifier(String inputLine){
+        if(Pattern.matches(".*class .*", inputLine)){
+            return "class";
+        }else{
+            if(Pattern.matches(".*get.*", inputLine)){
+                return "getter";
+            }else if(Pattern.matches(".*set.*", inputLine)){
+                return "setter";
+            }else if(Pattern.matches(".*\\(.*", inputLine)){
+                return "method";
+            }else if(inputLine.length()>5){
+                return "attribute";
+            }else{
+                return "empty";
+            }
         }
     }
 
     public void classParser(String inputLine){
         String[] words = inputLine.split(" ");
-        this.className = words[words.length-1];
+        className = words[words.length-1];
     }
 
-    public void publicParser(String inputLine){
+    public void attributeParser(String inputLine){
         String[] words = inputLine.split(" ");
-        for(String word:words){
-            Pattern.matches(".*: \\+.*", word)
-        }
-        this.idName = words[words.length-1];
+        type = words[words.length-2];
+        name = words[words.length-1];
+        type =  type.replace("+", "");
+        type =  type.replace("-", "");
+    }
+    // 重要!!! 準備來處理大小寫問題
+    public void getterParser(String inputLine){
+        String[] words = inputLine.split(" ");
+        type = words[words.length-1];
+        name = words[words.length-2];
+        name = name.substring(4);
     }
 
+    public void setterParser(String inputLine){
+        String[] temp1 = inputLine.split("\\+");
+        String[] temp2 = temp1[temp1.length-1].split("\\(");
+        // 切出getXXX
+        type = "void";
+        name = temp2[0];
+        // 切出parameter，整個括號裡都切出來
+        temp1 = inputLine.split("\\(");
+        temp2 = temp1[temp1.length-1].split("\\)");
+        parameter = temp2[0];
+    }
 
-    public void lineTest(String input){
-        // Is class declaration?
-        if(Pattern.matches(".*class .*", input)){//注意regex有一個空格
-            String[] words = input.split(" ");
-            this.className = words[words.length-1];
-            isClass = true;
+    public void methodParser(String inputLine){
+        String[] words = inputLine.split(" ");
+        String[] temp1 = inputLine.split("\\+");
+        String[] temp2 = temp1[temp1.length-1].split("\\(");
+        // 切出method的name
+        if(Pattern.matches(".*\\).*", words[words.length-1])){
+            // 如果method的)「竟然」沒有東西的話，則視return為void
+            // 六個測資都沒有這個情況，難道陷阱藏在隱藏測資裡?
+            type = "void";
+        }else{
+            type = words[words.length-1];
         }
-        // Not class declaration
-        else{
-            this.isClass = false;
-            // Is public?
-            if(Pattern.matches(".*: \\+.*", input)){
-                this.isPublic = true;
-            }else{
-                this.isPublic = false;
-            }
-            String[] words = input.split(" ");
-            // Is a Method?
-            if(Pattern.matches(".*\\(.*", input)){
-                this.isMethod = true;
-                this.idType = words[words.length-1];
-                this.idName = words[words.length-2];
-            }else{
-                this.isMethod = false;
-                this.idType = words[words.length-2];
-                this.idName = words[words.length-1];
-            }
-            // Is a Getter?
-            if(Pattern.matches(".*get.*", input)){
-                this.get = idName.substring(4,idName.length()-2).toLowerCase();
-                //大小寫問題晚點處理
-            }else{
-                this.get = "(>_<)";//這是不合法的變數名稱，用這個有趣又有效
-            }
-            // Is a Setter?
-            if(Pattern.matches(".*set.*", input)){
-                this.set = idName.substring(4,idName.length()-2).toLowerCase();
-                //大小寫問題晚點處理
-            }else{
-                this.set = "(>_<)";
-            }
-        }
+        name = temp2[0];
+        // 切出parameter，整個括號裡都切出來
+        temp1 = inputLine.split("\\(");
+        temp2 = temp1[temp1.length-1].split("\\)");
+        parameter = temp2[0];
     }
 }
 
 class myFileWriter{
-    public void write(  String className, boolean isClass, 
-                        boolean isPublic, boolean isMethod, 
-                        String idType, String idName,
-                        String get, String set){
-        String fileName = "";
-        String mermaidCode = "";
-        try {
-            if(className!=null){
-                fileName = className + ".java";
-            }
-            if(isClass){
-                mermaidCode = "public class " + className + " {\n" ;
-            }else{
-                if(isPublic){
-                    mermaidCode += "\tpublic";
-                    idType = idType.replace("+", "");
-                    idName = idName.replace("+", "");
-                }else{
-                    mermaidCode += "\tprivate";
-                    idType = idType.replace("-", "");
-                    idName = idName.replace("+", "");
-                }
-                mermaidCode += " " + idType + " " + idName;
-                if(get.equals("(>_<)")!=true){
-                    mermaidCode += " {\n\t\treturn " + get + ";\n\t}\n";
-                    System.out.println("is getter!!");
-                }else{
-                    mermaidCode += ";\n";
-                }
-                if(set.equals("(>_<)")!=true){
-                    mermaidCode += " {\n\t\tpublic void  " + get + ";\n\t}\n";
-                    System.out.println("is getter!!");
-                }else{
-                    mermaidCode += ";\n";
-                }
-            }
-            // mermaidCode += "}\n";
-            File file = new File(fileName);
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
-                bw.write(mermaidCode);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    public String fileName = "(>_<)";
 
     public void writeRightBrace(String className){
-        System.out.println("write } into "+ className + ".java");
         try {
             String fileName = className + ".java";
             File file = new File(fileName);
@@ -190,6 +161,100 @@ class myFileWriter{
                 bw.write("}\n");
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void classWrite(String className){
+        try{
+            fileName = className + ".java";
+            File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                bw.write("public class " + className + " {\n");
+            }
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void attributeWrite( 
+    String className, String attributeType, String attributeName, String security ){
+        try{
+            fileName = className + ".java";
+            File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                bw.write("\s\s\s\s"+ security + " " + attributeType + " " + attributeName + ";\n");
+            }
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void getterWrite( 
+    String className, String getterType, String getterName, String security ){
+        try{
+            fileName = className + ".java";
+            File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                bw.write("\s\s\s\s"+ security + " " + getterType + " get" + getterName + " {\n" 
+                        + "\s\s\s\s\s\s\s\sreturn " + getterName.substring(0,getterName.length()-2).toLowerCase() 
+                        + ";\n\s\s\s\s}\n");
+            }
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setterWrite( 
+    String className, String setterType, String setterName, String parameter ){
+        try{
+            fileName = className + ".java";
+            File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                String[] temp = parameter.split(" ");
+                String set = temp[temp.length - 1];
+                bw.write("\s\s\s\spublic void " + setterName +"("+ parameter + ") {\n"
+                        + "\s\s\s\s\s\s\s\sthis." + set + " = " + set +";\n\s\s\s\s}\n");
+            }
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 都寫完了才發現是不是這裡繼承自setterWrite就好
+    public void methodWrite( 
+    String className, String methodType, String methodName, String parameter, String security){
+        try{
+            fileName = className + ".java";
+            File file = new File(fileName);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                bw.write("\s\s\s\spublic "+ methodType + " " + methodName +"("+ parameter + ") ");
+                if(methodType.equals("int")){
+                    bw.write("{return 0;}\n");
+                }else if(methodType.equals("boolean")){
+                    bw.write("{return false;}\n");
+                }else if(methodType.equals("String")){
+                    bw.write("{return \"\";}\n");
+                }else if(methodType.equals("void")){
+                    bw.write("{;}\n");
+                }
+            }
+        }catch (IOException e) {
             e.printStackTrace();
         }
     }
