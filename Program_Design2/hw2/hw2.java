@@ -22,7 +22,9 @@ public class CodeGenerator {
             mermaidLine = reader.readLine();
             // 一行一行讀取文件(借用RegExp的內容)
             while ((mermaidLine = reader.readLine()) != null){
-                // Parser.lineTest(mermaidLine);
+                // 去除多餘空白
+                mermaidLine = mermaidLine.replaceAll("\\s+", " ");
+                // 分類
                 lineCategory = lineParser.classifier(mermaidLine);
                 if(lineCategory.equals("class")){
                     // 如果不是第一個class，就在前一個class寫下右大括號然後建立新的class檔
