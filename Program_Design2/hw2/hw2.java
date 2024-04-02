@@ -35,10 +35,10 @@ public class CodeGenerator {
                     CodeWriter.classWrite(lineParser.className);
                 }else{
                     if(lineCategory.equals("attribute")){
-                        String security = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
+                        String visibility = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
                         lineParser.attributeParser(mermaidLine);
                         CodeWriter.attributeWrite( lineParser.className, lineParser.type, 
-                                                   lineParser.name, security);
+                                                   lineParser.name, visibility);
                     }else if(lineCategory.equals("getter")){
                         lineParser.getterParser(mermaidLine);
                         CodeWriter.getterWrite( lineParser.className, lineParser.type, 
@@ -48,10 +48,10 @@ public class CodeGenerator {
                         CodeWriter.setterWrite( lineParser.className, lineParser.type, 
                                                 lineParser.name, lineParser.parameter);
                     }else if(lineCategory.equals("method")){
-                        String security = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
+                        String visibility = Pattern.matches(".*: \\+.*", mermaidLine)? "public": "private";
                         lineParser.methodParser(mermaidLine);
                         CodeWriter.methodWrite( lineParser.className, lineParser.type, 
-                                                lineParser.name, lineParser.parameter, security);
+                                                lineParser.name, lineParser.parameter, visibility);
                     }else if(lineCategory.equals("empty")){
                         continue;
                     }
@@ -182,12 +182,12 @@ class myFileWriter{
     }
 
     public void attributeWrite( 
-    String className, String attributeType, String attributeName, String security){
+    String className, String attributeType, String attributeName, String visibility){
         try{
             fileName = className + ".java";
             File file = new File(fileName);
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
-                bw.write("\s\s\s\s"+ security + " " + attributeType + " " + attributeName + ";\n");
+                bw.write("\s\s\s\s"+ visibility + " " + attributeType + " " + attributeName + ";\n");
             }
         }catch (IOException e) {
             e.printStackTrace();
@@ -232,7 +232,7 @@ class myFileWriter{
 
     // 都寫完了才發現是不是這裡可以繼承自setterWrite就好
     public void methodWrite( 
-    String className, String methodType, String methodName, String parameter, String security){
+    String className, String methodType, String methodName, String parameter, String visibility){
         try{
             fileName = className + ".java";
             File file = new File(fileName);
