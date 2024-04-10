@@ -57,7 +57,7 @@ class myFileReader{
             Integer day=1;
             while ((line = br.readLine()) != null) {
                 String[] rowPrice = line.split(",");
-                //´N¬O³o¤@¦æÅý§Ú©ñ±óchallenge point
+                //å°±æ˜¯é€™ä¸€è¡Œè®“æˆ‘æ”¾æ£„challenge point
                 List<Float> priceList = Arrays.stream(rowPrice).map(Float::valueOf).collect(Collectors.toList());
                 // List<Float> priceList = new ArrayList<>();
                 // for(int i=0; i<rowPrice.length; i++){
@@ -94,7 +94,7 @@ class myFileWriter{
         try{
             File file = new File(outputFileName);
             if (!file.exists()){
-                // ¦n¹³FileWriter·|À°§Úcreate file¡A©Ò¥H­n¼g¦bif¸Ì­±
+                // å¥½åƒFileWriteræœƒå¹«æˆ‘create fileï¼Œæ‰€ä»¥è¦å¯«åœ¨ifè£¡é¢
                 try (FileWriter writer = new FileWriter(file, true)) {
                     writer.append(rowName+"\n");
                 }
@@ -117,7 +117,7 @@ class myFileWriter{
                 while((line = br.readLine())!= null){
                     File file = new File(outputFileName);
                     if (!file.exists()){
-                        // ¦n¹³FileWriter·|À°§Úcreate file¡A©Ò¥H­n¼g¦bif¸Ì­±
+                        // å¥½åƒFileWriteræœƒå¹«æˆ‘create fileï¼Œæ‰€ä»¥è¦å¯«åœ¨ifè£¡é¢
                         try (FileWriter writer = new FileWriter(file, true)) {
                             writer.append(firstRow+"\n");
                         }
