@@ -43,30 +43,15 @@ public class HtmlParser {
             if(task == 0){
                 writer.task0Write();
             }else if(task == 1){
-                List<Float> result = new ArrayList<Float>();
-                result = cal.movingAvg(stockName, reader.nameToPrice.get(stockName), start, end);
-                writer.task1Write(stockName, result, start, end);
+                List<Float> resultList = new ArrayList<Float>();
+                resultList = cal.movingAvg(stockName, reader.nameToPrice.get(stockName), start, end);
+                writer.task1Write(stockName, resultList, start, end);
+            }else if(task == 2){
+                float result = cal.sigma(stockName, reader.nameToPrice.get(stockName), start, end);
+                writer.task2Write(stockName, result, start, end);
             }
         }
 
-    }
-}
-class myCalculator{
-    public List<Float> movingAvg(String name, List<Float> priceList, int start, int end){
-        List<Float> avgPrice= new ArrayList<Float>();
-        float tempSum = 0.0f;
-        float tempAvg = 0.0f;
-        for(int i=start-1; i<end-4; i++){
-            tempSum = 0.0f;
-            for(int j=i; j<i+5; j++){
-                tempSum += priceList.get(j);
-            }
-            tempAvg = tempSum*0.2f;
-            tempAvg = Math.round(tempAvg*100.0f)/100.0f;
-            avgPrice.add(tempAvg);
-        }
-        System.out.println(avgPrice);
-        return avgPrice;
     }
 }
 
@@ -89,10 +74,7 @@ class myFileReader{
                 String[] rowPrice = line.split(",");
                 //就是這一行讓我放棄challenge point
                 List<Float> priceList = Arrays.stream(rowPrice).map(Float::valueOf).collect(Collectors.toList());
-                // List<Float> priceList = new ArrayList<>();
-                // for(int i=0; i<rowPrice.length; i++){
-                //     priceList.add(Float.parseFloat(rowName[i]));
-                // }
+
                 dayToPrice.put(day,priceList);
                 day++;
             }
@@ -116,6 +98,44 @@ class myFileReader{
         // System.out.println(nameToPrice);
     }
 
+}
+
+class myCalculator{
+    // 計算移動平均
+    public List<Float> movingAvg(String name, List<Float> priceList, int start, int end){
+        List<Float> avgPrice= new ArrayList<Float>();
+        float tempSum = 0.0f;
+        float tempAvg = 0.0f;
+        for(int i=start-1; i<end-4; i++){
+            tempSum = 0.0f;
+            for(int j=i; j<i+5; j++){
+                tempSum += priceList.get(j);
+            }
+            tempAvg = tempSum*0.2f;
+            tempAvg = Math.round(tempAvg*100.0f)/100.0f; // 四捨五入，第二個逼我放棄challenge point的地方
+            avgPrice.add(tempAvg);
+        }
+        return avgPrice;
+    }
+
+    // 計算標準差
+    public float sigma(String name, List<Float> priceList, int start, int end){
+        float sigma = 0.0f;
+        float tempSum = 0.0f;
+        float tempAvg = 0.0f;
+        float RSS = 0.0f; //Residual sum of squares 殘差平方和
+        int n = end-start+1;
+        for(int i=start-1; i<end; i++){
+            tempSum += priceList.get(i);
+        }
+        tempAvg = tempSum/n;
+        for(int i=start-1; i<end; i++){
+            RSS += (priceList.get(i)-tempAvg)*(priceList.get(i)-tempAvg);
+        }
+        sigma = (float)Math.sqrt(RSS/(n-1));
+        sigma = Math.round(sigma*100.0f)/100.0f; // 四捨五入
+        return sigma;
+    }
 }
 
 class myFileWriter{
@@ -177,6 +197,19 @@ class myFileWriter{
                     counter++;
                 }
                 writer.append("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void task2Write(String stockName, float sigma, int start, int end){
+        String outputFileName = "output.csv";
+        try{
+            File file = new File(outputFileName);
+            try (FileWriter writer = new FileWriter(file, true)) {
+                writer.append(stockName+","+start+","+end+"\n");
+                writer.append(""+sigma+"\n"); // convert float to String
             }
         } catch (IOException e) {
             e.printStackTrace();
