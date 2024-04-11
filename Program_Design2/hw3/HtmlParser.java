@@ -7,7 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 // import javax.lang.model.util.Elements;
 import java.util.stream.Collectors; 
-// import java.lang.math.*;
+import java.lang.Math;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.*;
@@ -17,8 +17,17 @@ public class HtmlParser {
     public static void main(String[] args){
         myFileWriter writer = new myFileWriter();
         myFileReader reader = new myFileReader();
+        myCalculator cal = new myCalculator();
         int mode = Integer.parseInt(args[0]);
         int task = Integer.parseInt(args[1]);
+        String stockName = "";
+        int start = 0;
+        int end = 0;
+        if(task != 0){
+            stockName = args[2];
+            start = Integer.parseInt(args[3]);
+            end = Integer.parseInt(args[4]);
+        }
         reader.readAllData();
         if(mode == 0){
             try {
@@ -31,13 +40,34 @@ public class HtmlParser {
                 e.printStackTrace();
             }
         }else if (mode == 1){
-            writer.mode1Write(task, reader.nameToPrice.keySet(), reader.dayToPrice);
+            if(task == 0){
+                writer.task0Write();
+            }else if(task == 1){
+                List<Float> result = new ArrayList<Float>();
+                result = cal.movingAvg(stockName, reader.nameToPrice.get(stockName), start, end);
+                writer.task1Write(stockName, result, start, end);
+            }
         }
 
     }
 }
 class myCalculator{
-
+    public List<Float> movingAvg(String name, List<Float> priceList, int start, int end){
+        List<Float> avgPrice= new ArrayList<Float>();
+        float tempSum = 0.0f;
+        float tempAvg = 0.0f;
+        for(int i=start-1; i<end-4; i++){
+            tempSum = 0.0f;
+            for(int j=i; j<i+5; j++){
+                tempSum += priceList.get(j);
+            }
+            tempAvg = tempSum*0.2f;
+            tempAvg = Math.round(tempAvg*100.0f)/100.0f;
+            avgPrice.add(tempAvg);
+        }
+        System.out.println(avgPrice);
+        return avgPrice;
+    }
 }
 
 class myFileReader{
@@ -82,8 +112,8 @@ class myFileReader{
         }
 
         // for debug
-        System.out.println(dayToPrice);
-        System.out.println(nameToPrice);
+        // System.out.println(dayToPrice);
+        // System.out.println(nameToPrice);
     }
 
 }
@@ -107,32 +137,49 @@ class myFileWriter{
             e.printStackTrace();
         }
     }
-    public void mode1Write(int task, Set<String> rowName, HashMap<Integer, List<Float>> map){
+   
+    public void task0Write(){
+        String inputFileName = "data.csv";
         String outputFileName = "output.csv";
-        if(task == 0){
-            String line = "";
-            try{
-                BufferedReader br = new BufferedReader(new FileReader("data.csv"));
-                String firstRow = br.readLine();
-                while((line = br.readLine())!= null){
-                    File file = new File(outputFileName);
-                    if (!file.exists()){
-                        // 好像FileWriter會幫我create file，所以要寫在if裡面
-                        try (FileWriter writer = new FileWriter(file, true)) {
-                            writer.append(firstRow+"\n");
-                        }
-                    }
-                    try (FileWriter writer = new FileWriter(file, true)) {
-                        writer.append(line+"\n");
+        String line = "";
+        try{
+            BufferedReader br = new BufferedReader(new FileReader(inputFileName));
+            String firstRow = br.readLine();
+            while((line = br.readLine())!= null){
+                File file = new File(outputFileName);
+                if (!file.exists()){
+                    // 好像FileWriter會幫我create file，所以要寫在if裡面
+                    try (FileWriter writer = new FileWriter(file)) {
+                        writer.append(firstRow+"\n");
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+                try (FileWriter writer = new FileWriter(file, true)) {
+                    writer.append(line+"\n");
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+    }
 
-        if(task == 1){
-
+    public void task1Write(String stockName, List<Float> avgPriceList, int start, int end){
+        String outputFileName = "output.csv";
+        try{
+            File file = new File(outputFileName);
+            try (FileWriter writer = new FileWriter(file, true)) {
+                writer.append(stockName+","+start+","+end+"\n");
+                int counter = 0;
+                for(float price: avgPriceList){
+                    writer.append(""+price); // convert float to String
+                    if(counter < avgPriceList.size()-1){
+                        writer.append(","); // 這裡在處理有一點麻煩的逗號
+                    }
+                    counter++;
+                }
+                writer.append("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
