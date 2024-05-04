@@ -69,6 +69,6 @@ h = 0.5
 freq = 1
 X, Y = integrate(F,x,y,xStop,h)
 plt.plot(X,Y,'-o')
-plt.xlabel('t'); plt.ylabel('y')
+plt.xlabel('x'); plt.ylabel('y')
 plt.title('y vs. x')
 plt.show()
