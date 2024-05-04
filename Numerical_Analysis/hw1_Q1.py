@@ -82,7 +82,8 @@ print("Relaxation factor =",omega)
 print("Number of iterations: ", numIter)
 print("the solution is:\n", x)
 
-print("\n因為omega>1，因此當解往正確的方向收斂時，relaxation factor能使收斂速度更快")
+print("\nGauss-Seidel with relaxtion收斂較快")
+print("因為omega>1，因此當解往正確的方向收斂時，relaxation factor能使收斂速度更快")
 print("這叫做simultaneous overrelaxation")
 print("引用自Numerical Methods for Engineers by Chapra")
 
