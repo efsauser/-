@@ -29,7 +29,7 @@ public class TFIDFCalculator {
                 }
             }
         }
-        System.out.println(doc);
+        // System.out.println(doc);
         // System.out.println("Number of term in doc: " + number_term_in_doc);
         // System.out.println("Total words: " + totalWords);
         return number_term_in_doc / totalWords;
@@ -48,6 +48,8 @@ public class TFIDFCalculator {
                 }
             }
         }
+        // System.out.println("Number doc contain term: " + number_doc_contain_term);
+        // System.out.println("Total docs: " + docs.size());
         return Math.log(docs.size() / number_doc_contain_term);
     }
 
@@ -60,20 +62,20 @@ public class TFIDFCalculator {
         String testcaseFile = args[1]; 
         String outputFile = "output.txt";
         
-        /* ±N©Ò¦³¥y¤lÅª¶iLinklist¡A¨C¤­¦æ¬°¦ê¬°¤@­Ó¤å¥» */
+        /* å°‡æ‰€æœ‰å¥å­è®€é€²Linklistï¼Œæ¯äº”è¡Œç‚ºä¸²ç‚ºä¸€å€‹æ–‡æœ¬ */
         List<List<String>> docsList = new ArrayList<List<String>>();
         List<String> tempList = new ArrayList<String>();
         int counter = 0;
         try(BufferedReader br = new BufferedReader(new FileReader(inputFile, StandardCharsets.UTF_8))){
             String line = "";
             while ((line = br.readLine()) != null) {
-                // ±N©Ò¦³«D­^¤å¦r¤¸¡]¥]¬A¼Æ¦r©MªÅ®æ¡^¥HªÅ¥Õ¥N´À
+                // å°‡æ‰€æœ‰éè‹±æ–‡å­—å…ƒï¼ˆåŒ…æ‹¬æ•¸å­—å’Œç©ºæ ¼ï¼‰ä»¥ç©ºç™½ä»£æ›¿
                 line = line.replaceAll("[^a-zA-Z\\s+]", " ");
-                // ¥HªÅ®æ¶i¦æµü·Jªºsegmentation
+                // ä»¥ç©ºæ ¼é€²è¡Œè©å½™çš„segmentation
                 line = line.replaceAll("\\s+", " ").trim();
-                // ±N©Ò¦³­^¤å¤j¼gÂà´«¦¨¤p¼g
+                // å°‡æ‰€æœ‰è‹±æ–‡å¤§å¯«è½‰æ›æˆå°å¯«
                 line = line.toLowerCase();
-                // ±N5­Ó¥y¤l¦X¨Ö¦¨¤@­Ó¦r¦ê(§Y¤@­Ó¤å¥»)¡A¥y¤l¶¡¦P¼Ë¥HªÅ®æ¤À¹j
+                // å°‡5å€‹å¥å­åˆä½µæˆä¸€å€‹å­—ä¸²(å³ä¸€å€‹æ–‡æœ¬)ï¼Œå¥å­é–“åŒæ¨£ä»¥ç©ºæ ¼åˆ†éš”
                 // temp = temp.concat(line+" ");
                 tempList.add(line);
                 counter++;
@@ -86,17 +88,17 @@ public class TFIDFCalculator {
             e.printStackTrace();
         }
 
-        /* Åª´ú¸ê */
+        /* è®€æ¸¬è³‡ */
         List<String> termList = new ArrayList<String>();
         List<Integer> numberList = new ArrayList<Integer>();
         try(BufferedReader br = new BufferedReader(new FileReader(testcaseFile, StandardCharsets.UTF_8))){
-            // Åª²Ä¤@¦æ¡A¤]´N¬O¥Ø¼Ğ³æ¦r
+            // è®€ç¬¬ä¸€è¡Œï¼Œä¹Ÿå°±æ˜¯ç›®æ¨™å–®å­—
             String line = br.readLine();
             String[] temp = line.split(" ");
             for (int i = 0; i < temp.length; i++){
                 termList.add(temp[i]);
             }
-            // Åª²Ä¤G¦æ¡A¤]´N¬O¥Ø¼Ğ¤å¥»
+            // è®€ç¬¬äºŒè¡Œï¼Œä¹Ÿå°±æ˜¯ç›®æ¨™æ–‡æœ¬
             line = br.readLine();
             temp = line.split(" ");
             for (int i = 0; i < temp.length; i++){
@@ -108,14 +110,14 @@ public class TFIDFCalculator {
         // System.out.println(termList);
         // System.out.println(numberList);
 
-        /* ­pºâ¨Ã±Nµ²ªG¼g¶ioutput.txt */
+        /* è¨ˆç®—ä¸¦å°‡çµæœå¯«é€²output.txt */
         File file = new File(outputFile);
         try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
             for(int i = 0; i < termList.size(); i++){
                 // double TF = tf(docsList.get(numberList.get(i)), tempList.get(i));
                 // double IDF = idf(docsList, tempList.get(i));
-                // System.out.println(docsList.get(numberList.get(i)-1));
-                double TFIDF = tfIdfCalculate(docsList.get(numberList.get(i)-1), docsList, termList.get(i));
+                // System.out.println(docsList.get(numberList.get(i)));
+                double TFIDF = tfIdfCalculate(docsList.get(numberList.get(i)), docsList, termList.get(i));
                 writer.write(String.format("%.5f", TFIDF) + " ");
             }
             // for(int i = 0; i < docsList.size(); i++){
