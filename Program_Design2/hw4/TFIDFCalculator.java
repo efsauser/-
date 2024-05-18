@@ -5,83 +5,88 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.nio.charset.StandardCharsets;
 
-
 public class TFIDFCalculator {
-
-    public static double tf(List<String> doc, String term) {
-        String regex = "\\b\\w+\\b";
-        String regexTerm = "\\b" + Pattern.quote(term) + "\\b";
-        double number_term_in_doc = 0.0;
-        double totalWords = 0.0;
-        for(int i=0; i<doc.size(); i++) {
-            Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(doc.get(i));
-            Pattern patternTerm = Pattern.compile(regexTerm, Pattern.CASE_INSENSITIVE);
-            Matcher matcherTerm = patternTerm.matcher(doc.get(i));
-            while (matcher.find()) {
-                totalWords++;
-                if (matcherTerm.find()) {
+    
+    public static double tf(Trie docTrie, String term) {
+        int number_term_in_doc = 0;
+        int totalWords = 0;
+        // 如果這個文本裡面沒有指定的單字
+        // 則不必遍歷整個文本再計數，直接return 0.0就好
+        // 不過測資中好像幾乎沒有這種狀況...
+        if(docTrie.search(term)==false){
+            return 0.0;
+        }else{
+            for(String word:docTrie.doc.split(" ")){
+                if(word.equals(term)){
                     number_term_in_doc++;
                 }
+                totalWords++;
             }
         }
-        // System.out.println(doc);
-        // System.out.println("Number of term in doc: " + number_term_in_doc);
-        // System.out.println("Total words: " + totalWords);
-        return number_term_in_doc / totalWords;
+        return (double)number_term_in_doc / totalWords;
     }
 
-    public static double idf(List<List<String>> docs, String term) {
-        String regexTerm = "\\b" + Pattern.quote(term) + "\\b";
-        Pattern patternTerm = Pattern.compile(regexTerm, Pattern.CASE_INSENSITIVE);
-        double number_doc_contain_term = 0.0;
-        for(int i=0; i<docs.size(); i++) {
-            for(int j=0; j<5; j++) {
-                Matcher matcherTerm = patternTerm.matcher(docs.get(i).get(j));
-                if(matcherTerm.find()) {
+    public static double idf(List<Trie> trieList, String term, Trie allWordsTrie) {
+        int number_doc_contain_term = 0;
+        /*使用allWordsTrie儲存已經計算過number_doc_contain_term的單字
+          下次遇到同一個單字時就不必再遍歷所有的文本一次
+          這裡應該是主要節省了時間的地方
+          我原本使用HahsMap來完成這件事，但我想要challenge point，所以花了一點時間改寫 */
+        if(!allWordsTrie.search(term)){
+            for(int i=0; i<trieList.size(); i++) {
+                if(trieList.get(i).search(term)){
                     number_doc_contain_term++;
-                    break;
                 }
             }
+            allWordsTrie.insert(term);
+            allWordsTrie.setWordCount(term, number_doc_contain_term);
+        }else{
+            number_doc_contain_term = allWordsTrie.getWordCount(term);
         }
-        // System.out.println("Number doc contain term: " + number_doc_contain_term);
-        // System.out.println("Total docs: " + docs.size());
-        return Math.log(docs.size() / number_doc_contain_term);
+        return Math.log(trieList.size() / (double)number_doc_contain_term);
     }
 
-    public static double tfIdfCalculate(List<String> doc, List<List<String>> docs, String term) {
-        return tf(doc, term) * idf(docs, term);
+    public static double tfIdfCalculate(Trie docTrie, List<Trie> trieList, 
+                                        String term, Trie allWordsTrie) {
+        return tf(docTrie, term) * idf(trieList, term, allWordsTrie);
     }
     
     public static void main(String[] args){
         String inputFile = args[0];
         String testcaseFile = args[1]; 
         String outputFile = "output.txt";
-        
-        /* 將所有句子讀進Linklist，每五行為串為一個文本 */
-        List<List<String>> docsList = new ArrayList<List<String>>();
-        List<String> tempList = new ArrayList<String>();
-        int counter = 0;
+
+        /* 每顆Trie代表一個文本(5個句子的字典樹) */
+        List<Trie> trieList = new ArrayList<Trie>();
+        Trie allWordsTrie = new Trie();
+        Trie tempTrie = new Trie();
+        int counter = 0; // 計算是否已經讀入5個句子
         try(BufferedReader br = new BufferedReader(new FileReader(inputFile, StandardCharsets.UTF_8))){
             String line = "";
+            String temp = "";
             while ((line = br.readLine()) != null) {
                 // 將所有非英文字元（包括數字和空格）以空白代替
-                line = line.replaceAll("[^a-zA-Z\\s+]", " ");
+                line = line.replaceAll("[^a-zA-Z\\s]", " ");
                 // 以空格進行詞彙的segmentation
                 line = line.replaceAll("\\s+", " ").trim();
                 // 將所有英文大寫轉換成小寫
                 line = line.toLowerCase();
-                // 將5個句子合併成一個字串(即一個文本)，句子間同樣以空格分隔
-                // temp = temp.concat(line+" ");
-                tempList.add(line);
+                // 將新句子串接在後面，每五句形成一個文本
+                temp = temp.concat(line+" ");
                 counter++;
                 if(counter%5==0){
-                    docsList.add(tempList);
-                    tempList = new ArrayList<String>();
+                    // 將文本中每個單字insert到trie裡
+                    for (String word:temp.split(" ")) {
+                        if(!tempTrie.search(word)){
+                            tempTrie.insert(word);
+                        }
+                    }
+                    tempTrie.setDoc(temp);
+                    trieList.add(tempTrie);
+                    tempTrie = new Trie();
+                    temp = "";
                 }
             }
         }catch (IOException e) {
@@ -107,24 +112,84 @@ public class TFIDFCalculator {
         }catch(IOException e){
             e.printStackTrace();
         }
-        // System.out.println(termList);
-        // System.out.println(numberList);
 
         /* 計算並將結果寫進output.txt */
         File file = new File(outputFile);
         try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
             for(int i = 0; i < termList.size(); i++){
-                // double TF = tf(docsList.get(numberList.get(i)), tempList.get(i));
-                // double IDF = idf(docsList, tempList.get(i));
-                // System.out.println(docsList.get(numberList.get(i)));
-                double TFIDF = tfIdfCalculate(docsList.get(numberList.get(i)), docsList, termList.get(i));
+                // System.out.println(trieList.get(numberList.get(i)).doc);
+                double TFIDF = tfIdfCalculate(trieList.get(numberList.get(i)),
+                                              trieList, termList.get(i), allWordsTrie);
                 writer.write(String.format("%.5f", TFIDF) + " ");
             }
-            // for(int i = 0; i < docsList.size(); i++){
-            //     writer.write(docsList.get(i) + "\n");
-            // }
         }catch (IOException e) {
             e.printStackTrace();
         }
+    }
+}
+
+class TrieNode {
+    TrieNode[] children = new TrieNode[26];
+    boolean isEndOfWord = false;
+    int wordCount = 0;
+}
+
+class Trie {
+    TrieNode root = new TrieNode();
+    String doc = "";
+
+    // 每一顆Trie都對應一個文本(後來我拿來做了其他事，這裡可能不太對了)
+    public void setDoc(String doc){
+        this.doc = doc;
+    }
+
+    // 插入一個單字到 Trie
+    public void insert(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            if (node.children[c - 'a'] == null) {
+                node.children[c - 'a'] = new TrieNode();
+            }
+            node = node.children[c - 'a'];
+        }
+        node.isEndOfWord = true;
+    }
+
+    // 搜尋 Trie 中是否存在該單字
+    public boolean search(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            node = node.children[c - 'a'];
+            if (node == null) {
+                return false;
+            }
+        }
+        return node.isEndOfWord;
+    }
+
+    // 跟search幾乎一樣，只是這會設定這個葉節點的wordCount
+    // 與search幾乎一樣的原因就是為了找到葉子
+    public void setWordCount(String word, int count) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            if (node.children[c - 'a'] == null) {
+                break;
+            }
+            node = node.children[c - 'a'];
+        }
+        node.wordCount = count;
+    }
+
+    // 跟search幾乎一樣，只是這會回傳wordCount
+    // 與search幾乎一樣的原因就是為了找到葉子
+    public int getWordCount(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            node = node.children[c - 'a'];
+            if (node == null) {
+                return 0;
+            }
+        }
+        return node.wordCount;
     }
 }
