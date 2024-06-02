@@ -11,14 +11,14 @@ import java.util.Comparator;
 
 public class TFIDFSearch {
 
-    // ª½±µ½Æ»s¦ÛTFIDFCalculator
+    // ç›´æ¥è¤‡è£½è‡ªTFIDFCalculator
     public static double tf(Trie docTrie, String term) {
         
         int number_term_in_doc = 0;
         int totalWords = 0;
-        /* ¦pªG³o­Ó¤å¥»¸Ì­±¨S¦³«ü©wªº³æ¦r
-           «h¤£¥²¹M¾ú¾ã­Ó¤å¥»¦A­p¼Æ¡Aª½±µreturn 0.0´N¦n
-           ¤£¹L´ú¸ê¤¤¦n¹³´X¥G¨S¦³³oºØª¬ªp... */
+        /* å¦‚æœé€™å€‹æ–‡æœ¬è£¡é¢æ²’æœ‰æŒ‡å®šçš„å–®å­—
+           å‰‡ä¸å¿…éæ­·æ•´å€‹æ–‡æœ¬å†è¨ˆæ•¸ï¼Œç›´æ¥return 0.0å°±å¥½
+           ä¸éæ¸¬è³‡ä¸­å¥½åƒå¹¾ä¹æ²’æœ‰é€™ç¨®ç‹€æ³... */
         if(docTrie.search(term)==false){
             return 0.0;
         }else{
@@ -32,7 +32,7 @@ public class TFIDFSearch {
         return (double)number_term_in_doc / totalWords;
     }
 
-    // ¥Ø«eÁÙ¨S³B²zIDF¬°0ªº±¡ªp
+    // ç›®å‰é‚„æ²’è™•ç†IDFç‚º0çš„æƒ…æ³
     public static double idf(List<Trie> trieList, String term, HashMap<String, List<Integer>> containMap) {
         
         int number_doc_contain_term = 0;
@@ -77,8 +77,8 @@ public class TFIDFSearch {
     }
 
     public static List<Integer> findUnion(List<Integer> set1, List<Integer> set2){
-        // (B-A) U A = B U A || A,B¬O¶°¦X¡AU¬OÁp¶°²Å¸¹
-        // ³o­Ó°µªkªº¯ÊÂI¬O·|·d¶Ãsetªº¶¶§Ç
+        // (B-A) U A = B U A || A,Bæ˜¯é›†åˆï¼ŒUæ˜¯è¯é›†ç¬¦è™Ÿ
+        // é€™å€‹åšæ³•çš„ç¼ºé»æ˜¯æœƒæäº‚setçš„é †åº
         List<Integer> unionSet = new ArrayList<Integer>();
         unionSet.addAll(set1);
         unionSet.removeAll(set2);
@@ -94,21 +94,21 @@ public class TFIDFSearch {
     HashMap<String, List<Integer>> containMap= new HashMap<String, List<Integer>>();
     List<Double> TFIDFList = new ArrayList<Double>();
     try {
-        // Åª´ú¸ê
+        // è®€æ¸¬è³‡
         FileInputStream fis = new FileInputStream(inputFile+".ser");
         ObjectInputStream ois = new ObjectInputStream(fis);
         Indexer deserializedIdx = (Indexer) ois.readObject();
         List<Trie> trieList = deserializedIdx.getTrieListOfDocs();
 
-        /* Åª´ú¸ê */
-        //¦pªG®Ä¯à«Ü®tªº¸Ü´N§ï¦¨HashSet?
+        /* è®€æ¸¬è³‡ */
+        //å¦‚æœæ•ˆèƒ½å¾ˆå·®çš„è©±å°±æ”¹æˆHashSet?
         List<String> termList = new ArrayList<String>();
         List<Integer> numberList = new ArrayList<Integer>();
         try(BufferedReader br = new BufferedReader(new FileReader(testcaseFile, StandardCharsets.UTF_8))){
             String line = br.readLine();
             int N = Integer.parseInt(line);
             while((line = br.readLine()) != null){
-                // Åª²Ä¤G¦æ¤§«á¡A¤]´N¬O¥Ø¼Ğ³æ¦r
+                // è®€ç¬¬äºŒè¡Œä¹‹å¾Œï¼Œä¹Ÿå°±æ˜¯ç›®æ¨™å–®å­—
                 String[] terms = line.split(" ");
                 List<Integer> resultSet = new ArrayList<Integer>();
                 if(terms.length==1){
@@ -121,7 +121,7 @@ public class TFIDFSearch {
                             writeContainSet(trieList, terms[i], resultSet, containMap);
                         }
                         System.out.println(terms[i]+"="+containMap.get(terms[i]));
-                        if(i==0){ // ³o¸Ì¯uªº²V¶Ã¡A¤§«á¦³®É¶¡¦A¤j§ï
+                        if(i==0){ // é€™è£¡çœŸçš„æ··äº‚ï¼Œä¹‹å¾Œæœ‰æ™‚é–“å†å¤§æ”¹
                             resultSet = containMap.get(terms[i]);
                         }else{
                             resultSet = findIntersection(resultSet, containMap.get(terms[i]));
