@@ -34,12 +34,12 @@ class Trie implements Serializable{
     TrieNode root = new TrieNode();
     String doc = "";
 
-    // ¨C¤@ÁûTrie³£¹ïÀ³¤@­Ó¤å¥»(«á¨Ó§Ú®³¨Ó°µ¤F¨ä¥L¨Æ¡A³o¸Ì¥i¯à¤£¤Ó¹ï¤F)
+    // æ¯ä¸€é¡†Trieéƒ½å°æ‡‰ä¸€å€‹æ–‡æœ¬(å¾Œä¾†æˆ‘æ‹¿ä¾†åšäº†å…¶ä»–äº‹ï¼Œé€™è£¡å¯èƒ½ä¸å¤ªå°äº†)
     public void setDoc(String doc){
         this.doc = doc;
     }
 
-    // ´¡¤J¤@­Ó³æ¦r¨ì Trie
+    // æ’å…¥ä¸€å€‹å–®å­—åˆ° Trie
     public void insert(String word) {
         TrieNode node = root;
         for (char c : word.toCharArray()) {
@@ -51,7 +51,7 @@ class Trie implements Serializable{
         node.isEndOfWord = true;
     }
 
-    // ·j´M Trie ¤¤¬O§_¦s¦b¸Ó³æ¦r
+    // æœå°‹ Trie ä¸­æ˜¯å¦å­˜åœ¨è©²å–®å­—
     public boolean search(String word) {
         TrieNode node = root;
         for (char c : word.toCharArray()) {
@@ -63,8 +63,8 @@ class Trie implements Serializable{
         return node.isEndOfWord;
     }
 
-    // ¸òsearch´X¥G¤@¼Ë¡A¥u¬O³o·|³]©w³o­Ó¸­¸`ÂIªºwordCount
-    // »Psearch´X¥G¤@¼Ëªº­ì¦]´N¬O¬°¤F§ä¨ì¸­¤l
+    // è·Ÿsearchå¹¾ä¹ä¸€æ¨£ï¼Œåªæ˜¯é€™æœƒè¨­å®šé€™å€‹è‘‰ç¯€é»çš„wordCount
+    // èˆ‡searchå¹¾ä¹ä¸€æ¨£çš„åŸå› å°±æ˜¯ç‚ºäº†æ‰¾åˆ°è‘‰å­
     public void setWordCount(String word, int count) {
         TrieNode node = root;
         for (char c : word.toCharArray()) {
@@ -76,8 +76,8 @@ class Trie implements Serializable{
         node.wordCount = count;
     }
 
-    // ¸òsearch´X¥G¤@¼Ë¡A¥u¬O³o·|¦^¶ÇwordCount
-    // »Psearch´X¥G¤@¼Ëªº­ì¦]´N¬O¬°¤F§ä¨ì¸­¤l
+    // è·Ÿsearchå¹¾ä¹ä¸€æ¨£ï¼Œåªæ˜¯é€™æœƒå›å‚³wordCount
+    // èˆ‡searchå¹¾ä¹ä¸€æ¨£çš„åŸå› å°±æ˜¯ç‚ºäº†æ‰¾åˆ°è‘‰å­
     public int getWordCount(String word) {
         TrieNode node = root;
         for (char c : word.toCharArray()) {
