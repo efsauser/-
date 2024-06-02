@@ -10,25 +10,25 @@ import java.util.List;
 public class BuildIndex{
     public static void main(String[] args) {
         String inputFile = args[0];
-        /* ¨CÁûTrie¥Nªí¤@­Ó¤å¥»(5­Ó¥y¤lªº¦r¨å¾ğ) */
+        /* æ¯é¡†Trieä»£è¡¨ä¸€å€‹æ–‡æœ¬(5å€‹å¥å­çš„å­—å…¸æ¨¹) */
         List<Trie> trieList = new ArrayList<Trie>();
         Trie tempTrie = new Trie();
-        int counter = 0; // ­pºâ¬O§_¤w¸gÅª¤J5­Ó¥y¤l
+        int counter = 0; // è¨ˆç®—æ˜¯å¦å·²ç¶“è®€å…¥5å€‹å¥å­
         try(BufferedReader br = new BufferedReader(new FileReader(inputFile, StandardCharsets.UTF_8))){
             String line = "";
             String temp = "";
             while ((line = br.readLine()) != null) {
-                // ±N©Ò¦³«D­^¤å¦r¤¸¡]¥]¬A¼Æ¦r©MªÅ®æ¡^¥HªÅ¥Õ¥N´À
+                // å°‡æ‰€æœ‰éè‹±æ–‡å­—å…ƒï¼ˆåŒ…æ‹¬æ•¸å­—å’Œç©ºæ ¼ï¼‰ä»¥ç©ºç™½ä»£æ›¿
                 line = line.replaceAll("[^a-zA-Z\\s]", " ");
-                // ¥HªÅ®æ¶i¦æµü·Jªºsegmentation
+                // ä»¥ç©ºæ ¼é€²è¡Œè©å½™çš„segmentation
                 line = line.replaceAll("\\s+", " ").trim();
-                // ±N©Ò¦³­^¤å¤j¼gÂà´«¦¨¤p¼g
+                // å°‡æ‰€æœ‰è‹±æ–‡å¤§å¯«è½‰æ›æˆå°å¯«
                 line = line.toLowerCase();
-                // ±N·s¥y¤l¦ê±µ¦b«á­±¡A¨C¤­¥y§Î¦¨¤@­Ó¤å¥»
+                // å°‡æ–°å¥å­ä¸²æ¥åœ¨å¾Œé¢ï¼Œæ¯äº”å¥å½¢æˆä¸€å€‹æ–‡æœ¬
                 temp = temp.concat(line+" ");
                 counter++;
                 if(counter%5==0){
-                    // ±N¤å¥»¤¤¨C­Ó³æ¦rinsert¨ìtrie¸Ì
+                    // å°‡æ–‡æœ¬ä¸­æ¯å€‹å–®å­—insertåˆ°trieè£¡
                     for (String word:temp.split(" ")) {
                         if(!tempTrie.search(word)){
                             tempTrie.insert(word);
@@ -41,7 +41,7 @@ public class BuildIndex{
                 }
             }
 
-            // §Ç¦C¤Æ
+            // åºåˆ—åŒ–
             Indexer idx = new Indexer(trieList);
             try {
                 String s = args[0].replaceAll("txt$", "ser");
