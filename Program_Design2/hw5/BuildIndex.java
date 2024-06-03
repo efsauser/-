@@ -11,8 +11,9 @@ public class BuildIndex{
     public static void main(String[] args) {
         String inputFile = args[0];
         /* 每顆Trie代表一個文本(5個句子的字典樹) */
-        List<Trie> trieList = new ArrayList<Trie>();
-        Trie tempTrie = new Trie();
+        // List<Trie> trieList = new ArrayList<Trie>();
+        // Trie tempTrie = new Trie();
+        List<String> contentList = new ArrayList<String>();
         int counter = 0; // 計算是否已經讀入5個句子
         try(BufferedReader br = new BufferedReader(new FileReader(inputFile, StandardCharsets.UTF_8))){
             String line = "";
@@ -29,20 +30,22 @@ public class BuildIndex{
                 counter++;
                 if(counter%5==0){
                     // 將文本中每個單字insert到trie裡
-                    for (String word:temp.split(" ")) {
-                        if(!tempTrie.search(word)){
-                            tempTrie.insert(word);
-                        }
-                    }
-                    tempTrie.setDoc(temp);
-                    trieList.add(tempTrie);
-                    tempTrie = new Trie();
+                    // for (String word:temp.split(" ")) {
+                    //     if(!tempTrie.search(word)){
+                    //         tempTrie.insert(word);
+                    //     }
+                    // }
+                    // tempTrie.setDoc(temp);
+                    // trieList.add(tempTrie);
+                    // tempTrie = new Trie();
+                    // temp = "";
+                    contentList.add(temp);
                     temp = "";
                 }
             }
 
             // 序列化
-            Indexer idx = new Indexer(trieList);
+            Indexer idx = new Indexer(contentList);
             try {
                 String s = args[0].replaceAll("txt$", "ser");
                 FileOutputStream fos = new FileOutputStream(s);
