@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +15,6 @@ public class TFIDFSearch {
 
     // 直接複製自TFIDFCalculator
     public static double tf(Trie docTrie, String term) {
-        
         int number_term_in_doc = 0;
         int totalWords = 0;
         /* 如果這個文本裡面沒有指定的單字
@@ -34,25 +35,19 @@ public class TFIDFSearch {
 
     // 目前還沒處理IDF為0的情況
     public static double idf(List<Trie> trieList, String term, HashMap<String, List<Integer>> containMap) {
-        
         int number_doc_contain_term = 0;
         if(!containMap.containsKey(term)){
-            List<Integer> tempSet = new ArrayList<Integer>();
-            for(int i=0; i<trieList.size(); i++){
-                if(trieList.get(i).search(term)){
-                    tempSet.add(i);
-                    number_doc_contain_term++;
-                }
-            }
-            containMap.put(term, tempSet);
+            return 0.0;
         }else{
             number_doc_contain_term = containMap.get(term).size();
+            if (number_doc_contain_term==0){
+                return 0.0;
+            }else{
+                return Math.log(trieList.size() / (double)number_doc_contain_term);
+            }
         }
-        return Math.log(trieList.size() / (double)number_doc_contain_term);
     }
 
-    // public static double tfIdfCalculate(Trie docTrie, List<Trie> trieList, 
-    //                                     String term, Trie allWordsTrie) {
     public static double tfIdfCalculate(Trie docTrie, List<Trie> trieList, 
                                         String term, HashMap<String, List<Integer>> containMap) {
         return tf(docTrie, term) * idf(trieList, term, containMap);
@@ -83,27 +78,42 @@ public class TFIDFSearch {
         unionSet.addAll(set1);
         unionSet.removeAll(set2);
         unionSet.addAll(set2);
+        unionSet.sort(Comparator.naturalOrder());
         return unionSet;
     }
 
     public static void main(String[] args) {
+    boolean debug = false;
+    boolean flag = false;
     String inputFile = args[0];
     String testcaseFile = args[1]; 
-
-    Trie allWordsTrie = new Trie();
+    String outputFile = "./output.txt";
     HashMap<String, List<Integer>> containMap= new HashMap<String, List<Integer>>();
-    List<Double> TFIDFList = new ArrayList<Double>();
+
+    if(flag){System.out.println("flag 1");}
     try {
-        // 讀測資
+        // 解序列化
         FileInputStream fis = new FileInputStream(inputFile+".ser");
         ObjectInputStream ois = new ObjectInputStream(fis);
         Indexer deserializedIdx = (Indexer) ois.readObject();
-        List<Trie> trieList = deserializedIdx.getTrieListOfDocs();
-
+        List<String> contentList = deserializedIdx.getListOfContent();
+        List<Trie> trieList = new ArrayList<Trie>();
+        Trie tempTrie = new Trie();
+        // 將文本中每個單字insert到trie裡
+        for (int i=0; i<contentList.size(); i++){
+            String tempContent = contentList.get(i);
+            for (String word:tempContent.split(" ")) {
+                if(!tempTrie.search(word)){
+                    tempTrie.insert(word);
+                }
+            }
+            tempTrie.setDoc(tempContent);
+            trieList.add(tempTrie);
+            tempTrie = new Trie();
+        }
+        if(flag){System.out.println("flag 2");}
         /* 讀測資 */
-        //如果效能很差的話就改成HashSet?
-        List<String> termList = new ArrayList<String>();
-        List<Integer> numberList = new ArrayList<Integer>();
+        //如果效率很差的話就改成HashSet?
         try(BufferedReader br = new BufferedReader(new FileReader(testcaseFile, StandardCharsets.UTF_8))){
             String line = br.readLine();
             int N = Integer.parseInt(line);
@@ -112,54 +122,81 @@ public class TFIDFSearch {
                 String[] terms = line.split(" ");
                 List<Integer> resultSet = new ArrayList<Integer>();
                 if(terms.length==1){
+                    if(flag){System.out.println("flag 3-1");}
                     if(!containMap.containsKey(terms[0])){
                         writeContainSet(trieList, terms[0], resultSet, containMap);
                     }
+                    if(debug){System.out.println(terms[0]+"="+containMap.get(terms[0]));}
+                    resultSet = containMap.get(terms[0]);
                 }else if(terms[1].equals("AND")){
                     for (int i = 0; i < terms.length; i+=2){
+                        if(flag){System.out.println("flag 3-2");}
                         if(!containMap.containsKey(terms[i])){
                             writeContainSet(trieList, terms[i], resultSet, containMap);
                         }
-                        System.out.println(terms[i]+"="+containMap.get(terms[i]));
+                        if(debug){System.out.println(terms[i]+"="+containMap.get(terms[i]));}
                         if(i==0){ // 這裡真的混亂，之後有時間再大改
                             resultSet = containMap.get(terms[i]);
                         }else{
                             resultSet = findIntersection(resultSet, containMap.get(terms[i]));
                         }
                     }
-                    System.out.println("intersection="+resultSet);
+                    if(debug){System.out.println("intersection="+resultSet);}
                 }else if(terms[1].equals("OR")){
+                    if(flag){System.out.println("flag 3-3");}
                     for (int i = 0; i < terms.length; i+=2){
                         if(!containMap.containsKey(terms[i])){
                             writeContainSet(trieList, terms[i], resultSet, containMap);
                         }
-                        System.out.println(terms[i]+"="+containMap.get(terms[i]));
+                        if(debug){System.out.println(terms[i]+"="+containMap.get(terms[i]));}
                         if(i==0){ 
                             resultSet = containMap.get(terms[i]);
                         }else{
                             resultSet = findUnion(resultSet, containMap.get(terms[i]));
                         }
                     }
-                    resultSet.sort(Comparator.naturalOrder());
-                    System.out.println("union="+resultSet);
+                    if(debug){System.out.println("union="+resultSet);}
                 }
+                List<Double> tfidfSumList = new ArrayList<Double>();
+                HashMap<Double, Integer> tfidfMap = new HashMap<Double, Integer>();
                 for (int i = 0; i < resultSet.size(); i++){
-                    // System.out.println("parameter:"+"trieList.get("+resultSet.get(i)+"),trieList,"+terms[2*i]+",containMap");
-                    for (int j = 0; j < terms.length; j+=2){
-                        System.out.print("TFIDF("+ terms[j]+","+resultSet.get(i)+ ") is " +
-                                        tfIdfCalculate(trieList.get(resultSet.get(i)),
-                                        trieList, terms[j], containMap)
-                                        + "\n");
+                    if(flag){System.out.println("flag 4");}
+                    double tfidfSum = 0.0;
+                    if(debug){
+                        for (int j = 0; j < terms.length; j+=2){
+                            System.out.print("TFIDF("+ terms[j]+","+resultSet.get(i)+ ") is " +
+                                            tfIdfCalculate(trieList.get(resultSet.get(i)),
+                                            trieList, terms[j], containMap)
+                                            + "\n");
+                        }
                     }
+                    for (int j = 0; j < terms.length; j+=2){
+                        tfidfSum += tfIdfCalculate(
+                                    trieList.get(resultSet.get(i)),trieList, terms[j], containMap);
+                    }
+                    tfidfMap.put(tfidfSum, resultSet.get(i));
+                    tfidfSumList.add(tfidfSum);
+                }
+                tfidfSumList.sort(Comparator.reverseOrder());
+
+                File file = new File(outputFile);
+                try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8, true)) {
+                    for (int k=0; k<N; k++){
+                        if(flag){System.out.println("flag 5");}
+                        if(k<tfidfSumList.size()){
+                            writer.write(tfidfMap.get(tfidfSumList.get(k)) + " ");
+                        }else{
+                            writer.write(-1 + " ");
+                        }
+                    }
+                    writer.write("\n");
+                }catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }catch(IOException e){
             e.printStackTrace();
         }
-        
-        // System.out.println(deserializedIdx.getDocContent(0));
-        // System.out.println(deserializedIdx.search("know"));
-
 
         ois.close();
         fis.close();
