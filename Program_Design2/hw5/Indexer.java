@@ -4,15 +4,22 @@ import java.util.List;
 public class Indexer implements Serializable{
     private static final long serialVersionUID = 1L;
     private List<Trie> trieListOfDocs;
+    private List<String> listOfContent;
 
-    public Indexer(List<Trie> trieListOfDocs) {
+    // public Indexer(List<Trie> trieListOfDocs) {
+    public Indexer(List<String> listOfContent) {
         // this.docContent = docContent;
         // this.docTrie = docTrie;
-        this.trieListOfDocs = trieListOfDocs;
+        this.listOfContent = listOfContent;
     }
 
     public String getDocContent(int docID) {
-        return this.trieListOfDocs.get(docID).doc;
+        // return this.trieListOfDocs.get(docID).doc;
+        return this.listOfContent.get(docID);
+    }
+
+    public List<String> getListOfContent() {
+        return this.listOfContent;
     }
 
     public List<Trie> getTrieListOfDocs() {
@@ -61,31 +68,5 @@ class Trie implements Serializable{
             }
         }
         return node.isEndOfWord;
-    }
-
-    // 跟search幾乎一樣，只是這會設定這個葉節點的wordCount
-    // 與search幾乎一樣的原因就是為了找到葉子
-    public void setWordCount(String word, int count) {
-        TrieNode node = root;
-        for (char c : word.toCharArray()) {
-            if (node.children[c - 'a'] == null) {
-                break;
-            }
-            node = node.children[c - 'a'];
-        }
-        node.wordCount = count;
-    }
-
-    // 跟search幾乎一樣，只是這會回傳wordCount
-    // 與search幾乎一樣的原因就是為了找到葉子
-    public int getWordCount(String word) {
-        TrieNode node = root;
-        for (char c : word.toCharArray()) {
-            node = node.children[c - 'a'];
-            if (node == null) {
-                return 0;
-            }
-        }
-        return node.wordCount;
     }
 }
