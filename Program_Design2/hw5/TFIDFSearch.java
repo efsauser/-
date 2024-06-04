@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,7 +34,6 @@ public class TFIDFSearch {
         return (double)number_term_in_doc / totalWords;
     }
 
-    // 目前還沒處理IDF為0的情況
     public static double idf(List<Trie> trieList, String term, HashMap<String, List<Integer>> containMap) {
         int number_doc_contain_term = 0;
         if(!containMap.containsKey(term)){
@@ -56,12 +56,14 @@ public class TFIDFSearch {
     public static void writeContainSet(List<Trie> trieList,String term, 
                                        List<Integer> set1, HashMap<String, List<Integer>> containMap){
         List<Integer> tempSet = new ArrayList<Integer>();
-        for(int i=0; i<trieList.size(); i++){
-            if(trieList.get(i).search(term)){
-                tempSet.add(i);
+        if(!containMap.containsKey(term)){
+            for(int i=0; i<trieList.size(); i++){
+                if(trieList.get(i).search(term)){
+                    tempSet.add(i);
+                }
             }
+            containMap.put(term, tempSet);
         }
-        containMap.put(term, tempSet);
     }
 
     public static List<Integer> findIntersection(List<Integer> set1, List<Integer> set2){
@@ -73,7 +75,7 @@ public class TFIDFSearch {
 
     public static List<Integer> findUnion(List<Integer> set1, List<Integer> set2){
         // (B-A) U A = B U A || A,B是集合，U是聯集符號
-        // 這個做法的缺點是會搞亂set的順序
+        // 這個做法的缺點是會搞亂set的順序，所以我又排序了一下
         List<Integer> unionSet = new ArrayList<Integer>();
         unionSet.addAll(set1);
         unionSet.removeAll(set2);
@@ -84,13 +86,11 @@ public class TFIDFSearch {
 
     public static void main(String[] args) {
     boolean debug = false;
-    boolean flag = false;
     String inputFile = args[0];
     String testcaseFile = args[1]; 
     String outputFile = "./output.txt";
-    HashMap<String, List<Integer>> containMap= new HashMap<String, List<Integer>>();
+    HashMap<String, List<Integer>> containMap = new HashMap<String, List<Integer>>();
 
-    if(flag){System.out.println("flag 1");}
     try {
         // 解序列化
         FileInputStream fis = new FileInputStream(inputFile+".ser");
@@ -99,7 +99,8 @@ public class TFIDFSearch {
         List<String> contentList = deserializedIdx.getListOfContent();
         List<Trie> trieList = new ArrayList<Trie>();
         Trie tempTrie = new Trie();
-        // 將文本中每個單字insert到trie裡
+
+        /* 將文本中每個單字insert到trie裡，即上一次作業的讀文本階段 */
         for (int i=0; i<contentList.size(); i++){
             String tempContent = contentList.get(i);
             for (String word:tempContent.split(" ")) {
@@ -111,9 +112,8 @@ public class TFIDFSearch {
             trieList.add(tempTrie);
             tempTrie = new Trie();
         }
-        if(flag){System.out.println("flag 2");}
+
         /* 讀測資 */
-        //如果效率很差的話就改成HashSet?
         try(BufferedReader br = new BufferedReader(new FileReader(testcaseFile, StandardCharsets.UTF_8))){
             String line = br.readLine();
             int N = Integer.parseInt(line);
@@ -122,15 +122,15 @@ public class TFIDFSearch {
                 String[] terms = line.split(" ");
                 List<Integer> resultSet = new ArrayList<Integer>();
                 if(terms.length==1){
-                    if(flag){System.out.println("flag 3-1");}
                     if(!containMap.containsKey(terms[0])){
                         writeContainSet(trieList, terms[0], resultSet, containMap);
                     }
                     if(debug){System.out.println(terms[0]+"="+containMap.get(terms[0]));}
                     resultSet = containMap.get(terms[0]);
+
                 }else if(terms[1].equals("AND")){
+                    HashSet<String> tempSet = new HashSet<String>();
                     for (int i = 0; i < terms.length; i+=2){
-                        if(flag){System.out.println("flag 3-2");}
                         if(!containMap.containsKey(terms[i])){
                             writeContainSet(trieList, terms[i], resultSet, containMap);
                         }
@@ -138,12 +138,19 @@ public class TFIDFSearch {
                         if(i==0){ // 這裡真的混亂，之後有時間再大改
                             resultSet = containMap.get(terms[i]);
                         }else{
-                            resultSet = findIntersection(resultSet, containMap.get(terms[i]));
+                            // 這是檢查輸入單字中有沒有重複的，專門對付tc3這種測資
+                            if(tempSet.contains(terms[i])){
+                                continue; 
+                            }else{
+                                tempSet.add(terms[i]);
+                                resultSet = findIntersection(resultSet, containMap.get(terms[i]));
+                            }
                         }
                     }
                     if(debug){System.out.println("intersection="+resultSet);}
+
                 }else if(terms[1].equals("OR")){
-                    if(flag){System.out.println("flag 3-3");}
+                    HashSet<String> tempSet = new HashSet<String>();
                     for (int i = 0; i < terms.length; i+=2){
                         if(!containMap.containsKey(terms[i])){
                             writeContainSet(trieList, terms[i], resultSet, containMap);
@@ -152,39 +159,86 @@ public class TFIDFSearch {
                         if(i==0){ 
                             resultSet = containMap.get(terms[i]);
                         }else{
-                            resultSet = findUnion(resultSet, containMap.get(terms[i]));
+                            // 這是檢查輸入單字中有沒有重複的，專門對付tc3這種測資
+                            if(tempSet.contains(terms[i])){
+                                continue; 
+                            }else{
+                                tempSet.add(terms[i]);
+                                resultSet = findUnion(resultSet, containMap.get(terms[i]));
+                            }
                         }
                     }
                     if(debug){System.out.println("union="+resultSet);}
                 }
-                List<Double> tfidfSumList = new ArrayList<Double>();
-                HashMap<Double, Integer> tfidfMap = new HashMap<Double, Integer>();
+                List<double[]> tfidfPair = new ArrayList<double[]>();
+                Comparator<double[]> tfidfPairComparator = new Comparator<double[]>() {
+                    @Override
+                    // 助教根本沒提到如果tfidf一樣大的時候要怎麼排序，
+                    // 我自己猜依照文本編號排序還真的對了= =
+                    public int compare(double[] e1, double[] e2) {
+                        if(e1[0]>e2[0]){
+                            return -1;
+                        }else if(e1[0]==e2[0]){
+                            if(e1[1]>e2[1]){
+                                return 1;
+                            }else{
+                                return -1;
+                            }
+                        }else{
+                            return 1;
+                        }
+                    }
+                };
                 for (int i = 0; i < resultSet.size(); i++){
-                    if(flag){System.out.println("flag 4");}
-                    double tfidfSum = 0.0;
                     if(debug){
                         for (int j = 0; j < terms.length; j+=2){
                             System.out.print("TFIDF("+ terms[j]+","+resultSet.get(i)+ ") is " +
-                                            tfIdfCalculate(trieList.get(resultSet.get(i)),
-                                            trieList, terms[j], containMap)
-                                            + "\n");
+                            tfIdfCalculate(trieList.get(resultSet.get(i)),
+                            trieList, terms[j], containMap)
+                            + "\n");
                         }
                     }
+                    double tfidfSum = 0.0;
                     for (int j = 0; j < terms.length; j+=2){
                         tfidfSum += tfIdfCalculate(
                                     trieList.get(resultSet.get(i)),trieList, terms[j], containMap);
                     }
-                    tfidfMap.put(tfidfSum, resultSet.get(i));
-                    tfidfSumList.add(tfidfSum);
+                    tfidfPair.add(new double[]{tfidfSum, (double)resultSet.get(i)});
+                    if(debug){
+                        System.out.print("BEFORE SORT:[");
+                        for(int k = 0; k < tfidfPair.size(); k++)
+                            System.out.print((int)tfidfPair.get(k)[1] + ",");
+                        System.out.print("]\n");
+                    }
                 }
-                tfidfSumList.sort(Comparator.reverseOrder());
+                if(debug){
+                    System.out.print("BEFORE SORT:[");
+                    for(int k = 0; k < N; k++)
+                        System.out.print((int)tfidfPair.get(k)[1] + ",");
+                    System.out.print("]\n");
+                    System.out.print("BEFORE SORT:[");
+                    for(int k = 0; k < N; k++)
+                        System.out.print(String.format("%.5f", (int)tfidfPair.get(k)[0]) + ",");
+                    System.out.print("]\n");
+                }
+
+                tfidfPair.sort(tfidfPairComparator);
+                if(debug){
+                    System.out.print("AFTER SORT:[");
+                    for(int k = 0; k < N; k++)
+                        System.out.print((int)tfidfPair.get(k)[1] + ",");
+                    System.out.print("]\n");
+                    System.out.print("AFTER SORT:[");
+                    for(int k = 0; k < N; k++)
+                        System.out.print(String.format("%.5f", (int)tfidfPair.get(k)[0]) + ",");
+                    System.out.print("]\n");
+                }
 
                 File file = new File(outputFile);
                 try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8, true)) {
                     for (int k=0; k<N; k++){
-                        if(flag){System.out.println("flag 5");}
-                        if(k<tfidfSumList.size()){
-                            writer.write(tfidfMap.get(tfidfSumList.get(k)) + " ");
+                        if(k<tfidfPair.size()){
+                            writer.write((int)tfidfPair.get(k)[1] + " ");
                         }else{
                             writer.write(-1 + " ");
                         }
@@ -205,5 +259,45 @@ public class TFIDFSearch {
         } catch (ClassNotFoundException c) {
             c.printStackTrace();
         }
+    }
+}
+
+class TrieNode{
+    TrieNode[] children = new TrieNode[26];
+    boolean isEndOfWord = false;
+    int wordCount = 0;
+}
+
+class Trie{
+    TrieNode root = new TrieNode();
+    String doc = "";
+
+    // 每一顆Trie都對應一個文本(後來我拿來做了其他事，這裡可能不太對了)
+    public void setDoc(String doc){
+        this.doc = doc;
+    }
+
+    // 插入一個單字到 Trie
+    public void insert(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            if (node.children[c - 'a'] == null) {
+                node.children[c - 'a'] = new TrieNode();
+            }
+            node = node.children[c - 'a'];
+        }
+        node.isEndOfWord = true;
+    }
+
+    // 搜尋 Trie 中是否存在該單字
+    public boolean search(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            node = node.children[c - 'a'];
+            if (node == null) {
+                return false;
+            }
+        }
+        return node.isEndOfWord;
     }
 }
